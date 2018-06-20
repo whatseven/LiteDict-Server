@@ -2,12 +2,15 @@ import hashlib
 import json
 import random
 import re
+import sqlite3
+import time
 from html.parser import HTMLParser
 
 import requests
-from flask import Flask, request
+from flask import Flask, request, Response
 
 from MDXTools.mdict_query import IndexBuilder
+from ext import WORDRECORD
 
 app=Flask(__name__)
 
@@ -71,10 +74,24 @@ def AddWord():
         Transaction = request.form.get('transaction')
         Description = request.form.get('description')
 
+        cn = sqlite3.connect(WORDRECORD)
+        cu = cn.cursor()
+
+        # Find if it is exist
+        cu.execute('select proficiency from record where word=?',(Word,))
+        res=cu.fetchone()
+        if res is None:
+            cu.execute("INSERT INTO record (word, wordTransaction, description, insertTime) "
+                   "VALUES (?,?,?,?)", (Word, Transaction, Description, time.time()))
+        else:
+            ProficiencyIncreament=100 if res[0]+25>100 else 100
+            cu.execute("update record set proficiency=? where word = ?",(ProficiencyIncreament,Word))
+        cn.commit()
+        cn.close()
 
         return 'ok'
 
-    # Transaction
+# Transaction
 @app.route("/transaction",methods=["GET","POST"])
 def Transaction():
     if 'GET'==request.method:
@@ -134,5 +151,15 @@ def Transaction():
 
         return json.dumps(ResultTransaction)
 
+# Synchronize
+@app.route("/Synchronize",methods=["GET"])
+def Synchronize():
+    if 'GET'==request.method:
+        with open(WORDRECORD, 'rb') as TargetFile:
+            data = TargetFile.read()
+        response = Response(data, content_type='application/octet-stream')
+    elif 'POST'==request.method:
+        pass
+
 if __name__=='__main__':
-    app.run(host='0.0.0.0')
+    app.run(host='0.0.0.0',port=7005)
