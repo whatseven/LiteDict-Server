@@ -7,7 +7,7 @@ import time
 from html.parser import HTMLParser
 
 import requests
-from flask import Flask, request, Response
+from flask import Flask, request, Response, abort
 
 from MDXTools.mdict_query import IndexBuilder
 from ext import WORDRECORD
@@ -99,7 +99,7 @@ def Transaction():
     elif 'POST'==request.method:
         Word = request.form.get('word')
         # Dict Parser
-        builder = IndexBuilder('MDXData/niujin.mdx')
+        builder = IndexBuilder('MDXData/collins.mdx')
         ResultWord = builder.mdx_lookup(Word)
         ResultTransaction=""
         if len(ResultWord) == 0:
@@ -151,15 +151,42 @@ def Transaction():
 
         return json.dumps(ResultTransaction)
 
-# Synchronize
-@app.route("/Synchronize",methods=["GET"])
-def Synchronize():
+# Download Database
+@app.route("/download",methods=["GET"])
+def Download():
     if 'GET'==request.method:
         with open(WORDRECORD, 'rb') as TargetFile:
             data = TargetFile.read()
         response = Response(data, content_type='application/octet-stream')
+        return response
     elif 'POST'==request.method:
         pass
+
+# Upload
+@app.route("/upload",methods=["POST"])
+def Upload():
+    if 'POST'==request.method:
+        try:
+            with open(WORDRECORD, 'rb') as TargetFile:
+                data = TargetFile.read()
+            response = Response()
+            return response
+        except Exception as e:
+            abort()
+
+# Remove
+@app.route("/remove",methods=["POST"])
+def Remove():
+    if 'POST'==request.method:
+        Word=request.form.get("word")
+        # Remove
+        cn = sqlite3.connect(WORDRECORD)
+        cu = cn.cursor()
+        cu.execute('delete from record where word=?',(Word,))
+        cn.commit()
+        cn.close()
+
+        return 'ok'
 
 if __name__=='__main__':
     app.run(host='0.0.0.0',port=7005)
