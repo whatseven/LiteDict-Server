@@ -38,21 +38,6 @@ class MyHTMLParser():
             "meta",charset="UTF-8"
         ))
 
-        # self.__Soup.head.append(self.__Soup.new_tag(
-        #     "script",type="text/javascript"
-        # ))
-        # self.__Soup.head.script.string=JQUERYSTATIC
-        #
-        # self.__Soup.head.append(self.__Soup.new_tag(
-        #     "script",type="text/javascript"
-        # ))
-        # self.__Soup.head.script.string=JSSTATIC
-        #
-        # self.__Soup.head.append(self.__Soup.new_tag(
-        #     "style",type="text/css"
-        # ))
-        # self.__Soup.head.script.string=CSSSTATIC
-
         return self.__Soup.prettify()
 
 
